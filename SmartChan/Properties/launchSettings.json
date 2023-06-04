@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "SmartChan": {
+      "commandName": "Project"
+    },
+    "SmartChan CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "anal"
+    }
+  }
+}
