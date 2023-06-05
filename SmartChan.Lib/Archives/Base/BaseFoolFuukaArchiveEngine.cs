@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using JetBrains.Annotations;
 using Url = Flurl.Url;
+using System.Runtime.ConstrainedExecution;
 
 namespace SmartChan.Lib.Archives.Base;
 
@@ -54,8 +55,10 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 		// var s  = await r.ResponseMessage.Content.ReadAsStringAsync();
 		var dp = await parser.ParseDocumentAsync(s);
 		var e  = dp.QuerySelectorAll(Resources.S_Post2);
+		// var e = dp.GetElementsByTagName(Resources.S_Post3);
+
 		// NewFunction(l2, e);
-		l2.AddRange(e);
+		// l2.AddRange(e);
 		var pages = dp.QuerySelectorAll(Resources.S_Paginate);
 
 		await Parallel.ForEachAsync(pages, ct, async (vElement, x) =>
@@ -67,7 +70,9 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 			}
 
 			dp = await parser.ParseDocumentAsync(await link.WithClient(Client).WithCookies(Cookies).GetStringAsync(ct));
+			
 			e  = dp.QuerySelectorAll(Resources.S_Post2);
+			// e = dp.GetElementsByTagName(Resources.S_Post3);
 			// ent.Add(elem);
 			// NewFunction(l2, e);
 			l2.AddRange(e);
@@ -88,38 +93,7 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 		int cn = 0;
 		var cl = new List<ChanPost>();
 
-		await Parallel.ForEachAsync(l2, async (ce3, a) =>
-		{
-			// var (ce, ce2) = ce3;
-
-			var ce2   = ce3;
-			var title = ce2.QuerySelector(".post_title");
-			// var post_wrapper = ce2.Children[1];
-
-			// var title = post_wrapper.Children[2].Children[0].Children[2];
-			var link = ce2.QuerySelector("a")?.GetAttribute("href");
-
-			var author = ce2.QuerySelector(".post_author");
-			// var authorTrip = post_wrapper.Children[2].Children[0].Children[3];
-			// var author     = authorTrip.Children[0];
-			// var trip       = authorTrip.Children[1];
-
-			var text = ce2.QuerySelector(".text");
-			// var text   = post_wrapper.Children[4];
-			var number = ce2.QuerySelectorAll("header > div > a");
-
-			var post = new ChanPost()
-			{
-				Title  = title?.TextContent,
-				Author = author?.TextContent,
-				// Tripcode = trip.TextContent,
-				Text = text?.TextContent,
-				Url = link
-			};
-
-			cl.Add(post);
-			OnPostInvocation(post);
-		});
+		await Parallel.ForEachAsync(l2, (element, token) => Body(element, token, cl));
 
 		return cl;
 

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Novus;
 using SmartChan.Lib;
 using SmartChan.Lib.Archives;
+using SmartChan.Lib.Archives.Base;
 using Spectre.Console;
 using Url = Flurl.Url;
 
@@ -28,27 +29,27 @@ public static class Program
 
 		AnsiConsole.WriteLine($"Boards: {boards.QuickJoin()} | Subject: {subj}");
 
-		int n       = 0;
-		var archive = new ArchivedMoeEngine();
+		int n  = 0;
+		var sc = new SearchClient();
 
-		archive.OnPost += (o, r) =>
-		{
-			Console.Title = $"\r{++n}";
-			AnsiConsole.WriteLine($"{r.Title}::{r.Text}");
-		};
-
-		var sw = Stopwatch.StartNew();
-
-		var posts = await archive.SearchAsync(new SearchQuery()
+		var query = new SearchQuery()
 		{
 			Boards       = boards,
 			Subject      = subj,
 			SubmitSearch = "Search"
-		});
+		};
 
-		Console.WriteLine(posts.Length);
+		var sw = Stopwatch.StartNew();
+
+		sc.OnEngineRes += (o, chanPosts) =>
+		{
+			AnsiConsole.WriteLine($"{chanPosts.Length}");
+		};
+
+		var posts = await sc.Search(BaseArchiveEngine.All, query);
 
 		sw.Stop();
+
 		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
 
 		await File.WriteAllLinesAsync($"posts.txt", posts.Select(p => $"[{p.Url}]\n{p.Title}\n{p.Text}\n"));

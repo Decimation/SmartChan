@@ -126,4 +126,7 @@
   <data name="S_Post2" xml:space="preserve">
     <value>aside .post</value>
   </data>
+  <data name="S_Post3" xml:space="preserve">
+    <value>.article</value>
+  </data>
 </root>

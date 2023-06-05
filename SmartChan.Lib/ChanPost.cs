@@ -5,13 +5,14 @@ namespace SmartChan.Lib;
 
 public record ChanPost
 {
-	public string Title    { get; init; }
-	public string Author   { get; init; }
-	public string Tripcode { get; init; }
-	public string Filename { get; init; }
-	public string Text     { get; init; }
-	public string Url     { get; init; }
-
+	public string   Title    { get; init; }
+	public string   Author   { get; init; }
+	public string   Tripcode { get; init; }
+	public string   Filename { get; init; }
+	public string   Text     { get; init; }
+	public string[] Url      { get; init; }
+	public DateTime Time     { get; init; }
+	
 	public override string ToString()
 	{
 		return $"{Title}";

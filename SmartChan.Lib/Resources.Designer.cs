@@ -86,5 +86,14 @@ namespace SmartChan.Lib {
                 return ResourceManager.GetString("S_Post2", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .article.
+        /// </summary>
+        internal static string S_Post3 {
+            get {
+                return ResourceManager.GetString("S_Post3", resourceCulture);
+            }
+        }
     }
 }
