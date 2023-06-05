@@ -41,7 +41,7 @@ public static class Program
 
 		var sw = Stopwatch.StartNew();
 
-		sc.OnEngineRes += (o, chanPosts) =>
+		sc.OnEngineResults += (o, chanPosts) =>
 		{
 			AnsiConsole.WriteLine($"{chanPosts.Length}");
 		};
@@ -51,8 +51,9 @@ public static class Program
 		sw.Stop();
 
 		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
-
-		await File.WriteAllLinesAsync($"posts.txt", posts.Select(p => $"[{p.Url}]\n{p.Title}\n{p.Text}\n"));
+		var p = posts[0];
+		await File.WriteAllLinesAsync($"posts.txt",
+		                              posts.Select(p => $"[{p.Url.QuickJoin(",")}]\n{p.Title}\n{p.Text}\n"));
 
 	}
 }

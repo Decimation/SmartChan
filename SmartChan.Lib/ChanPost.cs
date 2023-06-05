@@ -1,9 +1,11 @@
 ﻿// Read S SmartChan.Lib ChanPost.cs
 // 2023-06-04 @ 6:14 PM
 
+using Kantan.Model;
+
 namespace SmartChan.Lib;
 
-public record ChanPost
+public record ChanPost : IKeyValue
 {
 	public string   Title    { get; init; }
 	public string   Author   { get; init; }
@@ -12,7 +14,11 @@ public record ChanPost
 	public string   Text     { get; init; }
 	public string[] Url      { get; init; }
 	public DateTime Time     { get; init; }
-	
+	public dynamic  Other    { get; init; }
+
+	public KeyValuePair<string, object>[] KeyValues
+		=> IMap.ToMap(this, m => m.Name != nameof(KeyValues)).ToArray();
+
 	public override string ToString()
 	{
 		return $"{Title}";

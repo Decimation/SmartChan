@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Dynamic;
+using System.Runtime.CompilerServices;
 using AngleSharp.Dom;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
@@ -34,55 +35,16 @@ public abstract class BaseArchiveEngine : IDisposable
 
 	public abstract string Name { get; }
 
-	protected abstract Task<IFlurlResponse> SearchInitialAsync(SearchQuery query);
+	protected abstract Task<IFlurlResponse> GetInitialSearchResponseAsync(SearchQuery query);
 
 	protected abstract Task<IEnumerable<ChanPost>> ParseAsync(IFlurlResponse res, CancellationToken ct = default);
 
 	public abstract Task<ChanPost[]> SearchAsync(SearchQuery q);
 
-	public void Dispose() { }
-
-	protected BaseArchiveEngine()
-	{
-		Cookies = new CookieJar();
-	}
-
-	protected static FlurlClient Client { get; }
-
-	static BaseArchiveEngine()
-	{
-		FlurlHttp.Configure(settings =>
-		{
-			settings.Redirects.Enabled                    = true; // default true
-			settings.Redirects.AllowSecureToInsecure      = true; // default false
-			settings.Redirects.ForwardAuthorizationHeader = true; // default false
-			settings.Redirects.MaxAutoRedirects           = 20;   // default 10 (consecutive)
-
-		});
-
-		Client = new FlurlClient()
-			{ };
-
-	}
-
-	#region
-
-	public delegate void OnPostCallback(object s, ChanPost p);
-
-	public event OnPostCallback OnPost;
-
-	protected virtual void OnPostInvocation(ChanPost p)
-	{
-		OnPost?.Invoke(this, p);
-	}
-
-	#endregion
-
-	public static readonly BaseArchiveEngine[] All =
-		ReflectionHelper.CreateAllInAssembly<BaseArchiveEngine>(TypeProperties.Subclass).ToArray();
-
 	protected virtual async ValueTask Body(IElement elem, CancellationToken a, List<ChanPost> list)
 	{
+		// todo...
+
 		// var (ce, ce2) = ce3;
 		if (!elem.TagName.Contains("article", StringComparison.InvariantCultureIgnoreCase)) {
 			return;
@@ -124,11 +86,55 @@ public abstract class BaseArchiveEngine : IDisposable
 			Title  = title?.TextContent,
 			Author = author?.TextContent,
 			// Tripcode = trip?.TextContent,
-			Text = text?.TextContent,
-			Url  = new[] { link },
+			Text  = text?.TextContent,
+			Url   = new[] { link, fl },
+			Other = new ExpandoObject(),
 		};
+		post.Other.number = number;
+		post.Other.thread = thread;
 
 		list.Add(post);
-		OnPostInvocation(post);
+		OnResultInvoke(post);
 	}
+
+	public void Dispose() { }
+
+	protected BaseArchiveEngine()
+	{
+		Cookies = new CookieJar();
+	}
+
+	protected static FlurlClient Client { get; }
+
+	static BaseArchiveEngine()
+	{
+		FlurlHttp.Configure(settings =>
+		{
+			settings.Redirects.Enabled                    = true; // default true
+			settings.Redirects.AllowSecureToInsecure      = true; // default false
+			settings.Redirects.ForwardAuthorizationHeader = true; // default false
+			settings.Redirects.MaxAutoRedirects           = 20;   // default 10 (consecutive)
+
+		});
+
+		Client = new FlurlClient()
+			{ };
+
+	}
+
+	#region
+
+	public delegate void OnResultCallback(object s, ChanPost p);
+
+	public event OnResultCallback OnResult;
+
+	protected virtual void OnResultInvoke(ChanPost p)
+	{
+		OnResult?.Invoke(this, p);
+	}
+
+	#endregion
+
+	public static readonly BaseArchiveEngine[] All =
+		ReflectionHelper.CreateAllInAssembly<BaseArchiveEngine>(TypeProperties.Subclass).ToArray();
 }

@@ -5,10 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartChan.Lib
+namespace SmartChan.Lib;
+
+public static class ChanHelper
 {
-	static public class ChanHelper
-	{
-		public static string Norm([CanBeNull] this string s) => string.IsNullOrWhiteSpace(s) ? null : s;
-	}
+	public static string Norm([CanBeNull] this string s) => string.IsNullOrWhiteSpace(s) ? null : s;
 }

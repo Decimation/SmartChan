@@ -9,9 +9,9 @@ namespace SmartChan.Lib;
 
 public class SearchClient
 {
-	public delegate void OnEngine(object s, ChanPost[] p);
+	public delegate void EngineResultsCallback(object s, ChanPost[] p);
 
-	public event OnEngine OnEngineRes;
+	public event EngineResultsCallback OnEngineResults;
 
 	public async Task<ChanPost[]> Search(BaseArchiveEngine[] eng, SearchQuery q)
 	{
@@ -27,7 +27,7 @@ public class SearchClient
 			var r  = await Task.WhenAny(tasks);
 			var rr = await r;
 
-			OnEngineRes?.Invoke(this, rr);
+			OnEngineResults?.Invoke(this, rr);
 			posts.AddRange(rr);
 			tasks.Remove(r);
 		}

@@ -19,7 +19,7 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 
 	public override Url SearchUrl => Url.Combine(BaseUrl, "_", "search");
 
-	protected override async Task<IFlurlResponse> SearchInitialAsync(SearchQuery query)
+	protected override async Task<IFlurlResponse> GetInitialSearchResponseAsync(SearchQuery query)
 	{
 		var data = new FormUrlEncodedContent(
 			query.KeyValues.Select(kv => new KeyValuePair<string, string>(kv.Key, kv.Value?.ToString())));
@@ -38,7 +38,7 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 
 	public override async Task<ChanPost[]> SearchAsync(SearchQuery q)
 	{
-		var r = await SearchInitialAsync(q);
+		var r = await GetInitialSearchResponseAsync(q);
 		var c = await ParseAsync(r);
 
 		return c.ToArray();
@@ -46,7 +46,7 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 
 	protected override async Task<IEnumerable<ChanPost>> ParseAsync(IFlurlResponse r, CancellationToken ct = default)
 	{
-		string s = await GetDocument(ct, r);
+		string s = await GetDocumentAsync(ct, r);
 
 		var parser = new HtmlParser();
 
@@ -97,18 +97,9 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 
 		return cl;
 
-		static void NewFunction(ICollection<(IElement, IElement)> valueTuples, IElement element)
-		{
-			for (int i = 0; i < element.Children.Length - 1; i += 2) {
-				IElement ce  = element.Children[i];
-				IElement ce2 = element.Children[i + 1];
-				valueTuples.Add((ce, ce2));
-
-			}
-		}
 	}
 
-	protected async Task<string> GetDocument(CancellationToken ct, IFlurlResponse r)
+	protected async Task<string> GetDocumentAsync(CancellationToken ct, IFlurlResponse r)
 	{
 		var uri = r.ResponseMessage.Headers.Location;
 		uri ??= r.ResponseMessage.RequestMessage.RequestUri;

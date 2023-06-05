@@ -13,9 +13,9 @@ public sealed class ArchiveOfSinsEngine : BaseFoolFuukaArchiveEngine
 
 	public override string Name => "Archive of Sins";
 
-	protected override async Task<IFlurlResponse> SearchInitialAsync(SearchQuery query)
+	protected override async Task<IFlurlResponse> GetInitialSearchResponseAsync(SearchQuery query)
 	{
-		return await base.SearchInitialAsync(query);
+		return await base.GetInitialSearchResponseAsync(query);
 	}
 
 	public override async Task<ChanPost[]> SearchAsync(SearchQuery q)
