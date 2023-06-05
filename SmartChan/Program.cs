@@ -1,19 +1,28 @@
-﻿using System.CommandLine;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
 using Flurl.Http;
 using Kantan.Text;
+using Novus;
 using SmartChan.Lib;
+using Spectre.Console;
 using Url = Flurl.Url;
 
 namespace SmartChan;
 
 public static class Program
 {
+
+	static Program()
+	{
+
+	}
+
 	public static async Task Main(string[] args)
 	{
 #if DEBUG
-		
+
 #endif
 		var boards = args[1].Split(',');
 		var subj   = args[0];
@@ -22,24 +31,18 @@ public static class Program
 
 		var archive = new ArchivedMoe();
 
-		var r = await archive.SearchAsync(new SearchQuery()
+		var sw = Stopwatch.StartNew();
+
+		var posts = await archive.SearchAsync(new SearchQuery()
 		{
-			Boards = args[1].Split(','),
-			Subject = args[0],
+			Boards       = boards,
+			Subject      = subj,
 			SubmitSearch = "Search"
 		});
 
-		foreach (ChanPost c in r) {
-			Console.WriteLine(c);
-		}
+		Console.WriteLine(posts.Length);
 
-		Console.WriteLine(r.Count());
-	}
-
-	public static KeyValuePair<T1, T2>[] Add<T1, T2>(this KeyValuePair<T1, T2>[] t, params T1[] t2)
-	{
-		var l = new List<KeyValuePair<T1, T2>>(t);
-		l.AddRange(t2.Select(k => new KeyValuePair<T1, T2>(k, default(T2))));
-		return l.ToArray();
+		sw.Stop();
+		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
 	}
 }

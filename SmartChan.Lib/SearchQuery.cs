@@ -14,11 +14,6 @@ using Kantan.Model;
 
 namespace SmartChan.Lib;
 
-public interface IKeyValue
-{
-	public KeyValuePair<string, string>[] ToKeyValues { get; }
-}
-
 public class SearchQuery : IKeyValue
 {
 	#region
@@ -54,7 +49,7 @@ public class SearchQuery : IKeyValue
 
 	#endregion
 
-	public KeyValuePair<string, string>[] ToKeyValues
+	public KeyValuePair<string, object>[] KeyValues
 	{
 		get
 		{
@@ -87,7 +82,7 @@ public class SearchQuery : IKeyValue
 			var b = Boards.Select(kv => new KeyValuePair<string, string>("boards[]", kv));
 			kv.AddRange(b);
 
-			return kv.ToArray();
+			return kv.OfType<KeyValuePair<string, object>>().ToArray();
 		}
 	}
 }
