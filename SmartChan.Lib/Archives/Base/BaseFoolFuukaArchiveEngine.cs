@@ -97,6 +97,7 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 			// var post_wrapper = ce2.Children[1];
 
 			// var title = post_wrapper.Children[2].Children[0].Children[2];
+			var link = ce2.QuerySelector("a")?.GetAttribute("href");
 
 			var author = ce2.QuerySelector(".post_author");
 			// var authorTrip = post_wrapper.Children[2].Children[0].Children[3];
@@ -113,7 +114,7 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 				Author = author?.TextContent,
 				// Tripcode = trip.TextContent,
 				Text = text?.TextContent,
-
+				Url = link
 			};
 
 			cl.Add(post);

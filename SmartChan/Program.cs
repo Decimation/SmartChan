@@ -29,7 +29,7 @@ public static class Program
 		AnsiConsole.WriteLine($"Boards: {boards.QuickJoin()} | Subject: {subj}");
 
 		int n       = 0;
-		var archive = new ArchiveOfSinsEngine();
+		var archive = new ArchivedMoeEngine();
 
 		archive.OnPost += (o, r) =>
 		{
@@ -51,7 +51,7 @@ public static class Program
 		sw.Stop();
 		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
 
-		await File.WriteAllLinesAsync($"posts.txt", posts.Select(p => $"{p.Title}\n{p.Text}"));
+		await File.WriteAllLinesAsync($"posts.txt", posts.Select(p => $"[{p.Url}]\n{p.Title}\n{p.Text}\n"));
 
 	}
 }
