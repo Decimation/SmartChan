@@ -4,8 +4,11 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
 using Flurl.Http;
 using Kantan.Text;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Novus;
 using SmartChan.Lib;
+using SmartChan.Lib.Archives;
 using Spectre.Console;
 using Url = Flurl.Url;
 
@@ -13,11 +16,7 @@ namespace SmartChan;
 
 public static class Program
 {
-
-	static Program()
-	{
-
-	}
+	static Program() { }
 
 	public static async Task Main(string[] args)
 	{
@@ -27,9 +26,16 @@ public static class Program
 		var boards = args[1].Split(',');
 		var subj   = args[0];
 
-		Console.WriteLine($"Boards: {boards.QuickJoin()} | Subject: {subj}");
+		AnsiConsole.WriteLine($"Boards: {boards.QuickJoin()} | Subject: {subj}");
 
-		var archive = new ArchivedMoe();
+		int n       = 0;
+		var archive = new ArchiveOfSinsEngine();
+
+		archive.OnPost += (o, r) =>
+		{
+			Console.Title = $"\r{++n}";
+			AnsiConsole.WriteLine($"{r.Title}::{r.Text}");
+		};
 
 		var sw = Stopwatch.StartNew();
 
@@ -44,5 +50,8 @@ public static class Program
 
 		sw.Stop();
 		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
+
+		await File.WriteAllLinesAsync($"posts.txt", posts.Select(p => $"{p.Title}\n{p.Text}"));
+
 	}
 }

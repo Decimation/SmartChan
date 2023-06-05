@@ -77,5 +77,14 @@ namespace SmartChan.Lib {
                 return ResourceManager.GetString("S_Post", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to aside .post.
+        /// </summary>
+        internal static string S_Post2 {
+            get {
+                return ResourceManager.GetString("S_Post2", resourceCulture);
+            }
+        }
     }
 }

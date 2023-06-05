@@ -49,15 +49,20 @@ public class SearchQuery : IKeyValue
 
 	#endregion
 
+	public SearchQuery()
+	{
+		Boards = null;
+	}
+
 	public KeyValuePair<string, object>[] KeyValues
 	{
 		get
 		{
-			var kv = new List<KeyValuePair<string, string>>
+			var kv = new List<KeyValuePair<string, object>>
 			{
 				new("text", Text),
 				new("submit_search", SubmitSearch),
-				new("tnum", Thread.ToString()),
+				new("tnum", Thread),
 				new("subject", Subject),
 				new("username", Username),
 				new("tripcode", Tripcode),
@@ -79,7 +84,7 @@ public class SearchQuery : IKeyValue
 
 			};
 
-			var b = Boards.Select(kv => new KeyValuePair<string, string>("boards[]", kv));
+			var b = Boards.Select(k => new KeyValuePair<string, object>("boards[]", k));
 			kv.AddRange(b);
 
 			return kv.OfType<KeyValuePair<string, object>>().ToArray();

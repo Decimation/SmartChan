@@ -4,21 +4,33 @@
 using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
 using Flurl.Http;
+using Kantan.Text;
+using Microsoft.Extensions.Logging;
+using System;
+using JetBrains.Annotations;
 using Url = Flurl.Url;
 
-namespace SmartChan.Lib;
+namespace SmartChan.Lib.Archives.Base;
 
-public abstract class BaseFoolFuukaArchive : BaseChanArchive
+public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 {
+	protected BaseFoolFuukaArchiveEngine() : base() { }
+
+	public override Url SearchUrl => Url.Combine(BaseUrl, "_", "search");
+
 	protected override async Task<IFlurlResponse> SearchInitialAsync(SearchQuery query)
 	{
-		var data = new FormUrlEncodedContent(query.KeyValues.OfType<KeyValuePair<string, string>>());
+		var data = new FormUrlEncodedContent(
+			query.KeyValues.Select(kv => new KeyValuePair<string, string>(kv.Key, kv.Value?.ToString())));
 
-		var r = await Url.Combine(BaseUrl, "_", "search")
+		var r = await SearchUrl
 			        .WithClient(Client)
 			        .AllowAnyHttpStatus()
 			        .WithAutoRedirect(true)
+			        .WithCookies(Cookies)
 			        .PostAsync(data);
+
+		Logger.LogTrace("{Url} for {Name} #1", SearchUrl, Name);
 
 		return r;
 	}
@@ -33,20 +45,17 @@ public abstract class BaseFoolFuukaArchive : BaseChanArchive
 
 	protected override async Task<IEnumerable<ChanPost>> ParseAsync(IFlurlResponse r, CancellationToken ct = default)
 	{
-		// var uri  = r.ResponseMessage.RequestMessage.RequestUri;
-		// var res2 = await uri.WithClient(Client).GetAsync(ct);
+		string s = await GetDocument(ct, r);
 
 		var parser = new HtmlParser();
 
-		var    l2          = new List<(IElement, IElement)>();
-		
-		// var s = await res2.GetStringAsync();
+		var l2 = new List<IElement>();
 
-		var s  = await r.ResponseMessage.Content.ReadAsStringAsync();
+		// var s  = await r.ResponseMessage.Content.ReadAsStringAsync();
 		var dp = await parser.ParseDocumentAsync(s);
-		var e  = dp.QuerySelector(Resources.S_Post);
-		NewFunction(l2, e);
-
+		var e  = dp.QuerySelectorAll(Resources.S_Post2);
+		// NewFunction(l2, e);
+		l2.AddRange(e);
 		var pages = dp.QuerySelectorAll(Resources.S_Paginate);
 
 		await Parallel.ForEachAsync(pages, ct, async (vElement, x) =>
@@ -57,10 +66,11 @@ public abstract class BaseFoolFuukaArchive : BaseChanArchive
 				return;
 			}
 
-			dp = await parser.ParseDocumentAsync(await link.WithClient(Client).GetStringAsync(ct));
-			e  = dp.QuerySelector(Resources.S_Post);
+			dp = await parser.ParseDocumentAsync(await link.WithClient(Client).WithCookies(Cookies).GetStringAsync(ct));
+			e  = dp.QuerySelectorAll(Resources.S_Post2);
 			// ent.Add(elem);
-			NewFunction(l2, e);
+			// NewFunction(l2, e);
+			l2.AddRange(e);
 		});
 
 		/*foreach (IElement vElement in pages) {
@@ -80,8 +90,9 @@ public abstract class BaseFoolFuukaArchive : BaseChanArchive
 
 		await Parallel.ForEachAsync(l2, async (ce3, a) =>
 		{
-			var (ce, ce2) = ce3;
+			// var (ce, ce2) = ce3;
 
+			var ce2   = ce3;
 			var title = ce2.QuerySelector(".post_title");
 			// var post_wrapper = ce2.Children[1];
 
@@ -98,14 +109,15 @@ public abstract class BaseFoolFuukaArchive : BaseChanArchive
 
 			var post = new ChanPost()
 			{
-				Title  = title.TextContent,
-				Author = author.TextContent,
+				Title  = title?.TextContent,
+				Author = author?.TextContent,
 				// Tripcode = trip.TextContent,
-				Text = text.TextContent,
+				Text = text?.TextContent,
 
 			};
-			cl.Add(post);
 
+			cl.Add(post);
+			OnPostInvocation(post);
 		});
 
 		return cl;
@@ -120,14 +132,15 @@ public abstract class BaseFoolFuukaArchive : BaseChanArchive
 			}
 		}
 	}
-}
 
-public sealed class ArchiveOfSins : BaseFoolFuukaArchive
-{
-	public override Url BaseUrl => "https://archiveofsins.com/";
-}
+	protected async Task<string> GetDocument(CancellationToken ct, IFlurlResponse r)
+	{
+		var uri = r.ResponseMessage.Headers.Location;
+		uri ??= r.ResponseMessage.RequestMessage.RequestUri;
 
-public sealed class ArchivedMoe : BaseFoolFuukaArchive
-{
-	public override Url BaseUrl => "https://archived.moe/";
+		Logger.LogTrace("{Url} for {Name} #2", uri, Name);
+		var res2 = await uri.WithClient(Client).WithCookies(Cookies).GetAsync(ct);
+		var s    = await res2.GetStringAsync();
+		return s;
+	}
 }
