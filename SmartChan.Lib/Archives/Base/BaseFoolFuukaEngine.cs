@@ -7,9 +7,11 @@ using Flurl.Http;
 using Kantan.Text;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using JetBrains.Annotations;
 using Url = Flurl.Url;
 using System.Runtime.ConstrainedExecution;
+using SmartChan.Lib.Model;
 
 namespace SmartChan.Lib.Archives.Base;
 
@@ -36,16 +38,15 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 		return r;
 	}
 
-	public override async Task<ChanPost[]> RunSearchAsync(SearchQuery q)
+	public override async Task<ChanResult> RunSearchAsync(SearchQuery q)
 	{
 		var r = await GetInitialResponseAsync(q);
 		var c = await ParseResponseAsync(r);
 
-		return c.ToArray();
+		return c;
 	}
 
-	protected override async Task<IEnumerable<ChanPost>> ParseResponseAsync(
-		IFlurlResponse r, CancellationToken ct = default)
+	protected override async Task<ChanResult> ParseResponseAsync(IFlurlResponse r, CancellationToken ct = default)
 	{
 		string s = await GetDocumentAsync(ct, r);
 
@@ -96,14 +97,26 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 		}*/
 
 		int cn = 0;
-		var cl = new List<ChanPost>();
 
-		await Parallel.ForEachAsync(l2, ct, (element, token) =>
+		var cb = new ConcurrentBag<ChanPost>();
+
+		await Parallel.ForEachAsync(l2, ct, async (element, token) =>
 		{
-			return ParseBodyAsync(element, token, cl);
+			var pb = await ParseBodyAsync(element, token);
+
+			if (pb is {}) {
+				cb.Add(pb);
+			}
+
 		});
 
-		return cl;
+		var cr = new ChanResult(this)
+		{
+			Results = new List<ChanPost>(cb)
+		};
+		cb.Clear();
+
+		return cr;
 
 	}
 

@@ -1,9 +1,12 @@
 ﻿using System.Dynamic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using AngleSharp.Dom;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using Novus.Utilities;
+using SmartChan.Lib.Model;
+using SmartChan.Lib.Utilities;
 using Url = Flurl.Url;
 
 [assembly: InternalsVisibleTo("SmartChan")]
@@ -53,17 +56,17 @@ public abstract class BaseArchiveEngine : IDisposable
 
 	protected abstract Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query);
 
-	protected abstract Task<IEnumerable<ChanPost>> ParseResponseAsync(IFlurlResponse res, CancellationToken ct = default);
+	protected abstract Task<ChanResult> ParseResponseAsync(IFlurlResponse res, CancellationToken ct = default);
 
-	public abstract Task<ChanPost[]> RunSearchAsync(SearchQuery q);
+	public abstract Task<ChanResult> RunSearchAsync(SearchQuery q);
 
-	protected virtual async ValueTask ParseBodyAsync(IElement elem, CancellationToken a, List<ChanPost> list)
+	protected virtual async ValueTask<ChanPost> ParseBodyAsync(IElement elem, CancellationToken a)
 	{
 		// todo...
 
 		// var (ce, ce2) = ce3;
 		if (!elem.TagName.Contains("article", StringComparison.InvariantCultureIgnoreCase)) {
-			return;
+			return null;
 		}
 
 		IElement post_files  = null;
@@ -105,12 +108,12 @@ public abstract class BaseArchiveEngine : IDisposable
 			Text  = text?.TextContent,
 			Url   = [link, fl],
 			Other = new ExpandoObject(),
+			Time = DateTime.Parse(time.GetAttribute("datetime"))
 		};
 		post.Other.number = number;
 		post.Other.thread = thread;
 
-		list.Add(post);
-		OnResultInvoke(post);
+		return post;
 	}
 
 	public void Dispose() { }
@@ -126,11 +129,6 @@ public abstract class BaseArchiveEngine : IDisposable
 	public delegate void OnResultCallback(object s, ChanPost p);
 
 	public event OnResultCallback OnResult;
-
-	protected virtual void OnResultInvoke(ChanPost p)
-	{
-		OnResult?.Invoke(this, p);
-	}
 
 	#endregion
 

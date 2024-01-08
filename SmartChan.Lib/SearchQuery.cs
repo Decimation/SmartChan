@@ -91,10 +91,10 @@ public class SearchQuery : IKeyValue
 			new("type", Type),
 			new("results", Results),
 			new("order", Order),
-
+			
 		};
 
-		var b = Boards.Select(k => new KeyValuePair<string, object>("boards[]", k));
+		var b  = Boards.Select(k => new KeyValuePair<string, object>("boards[]", k));
 		kv.AddRange(b);
 
 		return kv;
