@@ -17,7 +17,7 @@ public class SearchClient
 	{
 		var tasks = eng.Select(e =>
 		{
-			return e.SearchAsync(q);
+			return e.RunSearchAsync(q);
 		}).ToList();
 
 		var posts = new List<ChanPost>();

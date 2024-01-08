@@ -17,6 +17,7 @@ namespace SmartChan;
 
 public static class Program
 {
+
 	static Program() { }
 
 	public static async Task Main(string[] args)
@@ -52,8 +53,10 @@ public static class Program
 
 		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
 		var p = posts[0];
+
 		await File.WriteAllLinesAsync($"posts.txt",
 		                              posts.Select(p => $"[{p.Url.QuickJoin(",")}]\n{p.Title}\n{p.Text}\n"));
 
 	}
+
 }

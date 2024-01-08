@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using AngleSharp.Dom;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
-using Novus;
 using Novus.Utilities;
 using Url = Flurl.Url;
 
@@ -11,18 +10,28 @@ using Url = Flurl.Url;
 
 namespace SmartChan.Lib.Archives.Base;
 
-internal static class LogUtil
-{
-	internal static readonly ILoggerFactory Factory =
-		LoggerFactory.Create(builder => builder.AddDebug().SetMinimumLevel(LogLevel.Trace));
-}
-
 public abstract class BaseArchiveEngine : IDisposable
 {
-	[ModuleInitializer]
-	public static void Init()
+
+	protected static readonly FlurlClient Client;
+
+	static BaseArchiveEngine()
 	{
-		Global.Setup();
+		Client = new()
+		{
+			Settings =
+			{
+				Redirects =
+				{
+					Enabled                    = true, // default true
+					AllowSecureToInsecure      = true, // default false
+					ForwardAuthorizationHeader = true, // default false
+					MaxAutoRedirects           = 20,   // default 10 (consecutive)
+
+				}
+			}
+		};
+
 	}
 
 	protected internal static readonly ILogger Logger = LogUtil.Factory.CreateLogger(nameof(BaseArchiveEngine));
@@ -35,13 +44,20 @@ public abstract class BaseArchiveEngine : IDisposable
 
 	public abstract string Name { get; }
 
-	protected abstract Task<IFlurlResponse> GetInitialSearchResponseAsync(SearchQuery query);
+	protected virtual IFlurlRequest BuildInitialRequest(SearchQuery query)
+	{
+		return Client.Request(SearchUrl)
+			.WithTimeout(Timeout)
+			.WithCookies(Cookies);
+	}
 
-	protected abstract Task<IEnumerable<ChanPost>> ParseAsync(IFlurlResponse res, CancellationToken ct = default);
+	protected abstract Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query);
 
-	public abstract Task<ChanPost[]> SearchAsync(SearchQuery q);
+	protected abstract Task<IEnumerable<ChanPost>> ParseResponseAsync(IFlurlResponse res, CancellationToken ct = default);
 
-	protected virtual async ValueTask Body(IElement elem, CancellationToken a, List<ChanPost> list)
+	public abstract Task<ChanPost[]> RunSearchAsync(SearchQuery q);
+
+	protected virtual async ValueTask ParseBodyAsync(IElement elem, CancellationToken a, List<ChanPost> list)
 	{
 		// todo...
 
@@ -87,7 +103,7 @@ public abstract class BaseArchiveEngine : IDisposable
 			Author = author?.TextContent,
 			// Tripcode = trip?.TextContent,
 			Text  = text?.TextContent,
-			Url   = new[] { link, fl },
+			Url   = [link, fl],
 			Other = new ExpandoObject(),
 		};
 		post.Other.number = number;
@@ -102,23 +118,6 @@ public abstract class BaseArchiveEngine : IDisposable
 	protected BaseArchiveEngine()
 	{
 		Cookies = new CookieJar();
-	}
-
-	protected static FlurlClient Client { get; }
-
-	static BaseArchiveEngine()
-	{
-		FlurlHttp.Configure(settings =>
-		{
-			settings.Redirects.Enabled                    = true; // default true
-			settings.Redirects.AllowSecureToInsecure      = true; // default false
-			settings.Redirects.ForwardAuthorizationHeader = true; // default false
-			settings.Redirects.MaxAutoRedirects           = 20;   // default 10 (consecutive)
-
-		});
-
-		Client = new FlurlClient()
-			{ };
 
 	}
 
@@ -136,5 +135,8 @@ public abstract class BaseArchiveEngine : IDisposable
 	#endregion
 
 	public static readonly BaseArchiveEngine[] All =
-		ReflectionHelper.CreateAllInAssembly<BaseArchiveEngine>(TypeProperties.Subclass).ToArray();
+		ReflectionHelper.CreateAllInAssembly<BaseArchiveEngine>(InheritanceProperties.Subclass).ToArray();
+
+	public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds(20);
+
 }

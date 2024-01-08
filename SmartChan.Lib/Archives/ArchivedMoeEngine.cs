@@ -6,7 +6,7 @@ using SmartChan.Lib.Archives.Base;
 
 namespace SmartChan.Lib.Archives;
 
-public sealed class ArchivedMoeEngine : BaseFoolFuukaArchiveEngine
+public sealed class ArchivedMoeEngine : BaseFoolFuukaEngine
 {
 	public override Url BaseUrl => "https://archived.moe/";
 

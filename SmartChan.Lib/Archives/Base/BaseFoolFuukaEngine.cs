@@ -13,22 +13,22 @@ using System.Runtime.ConstrainedExecution;
 
 namespace SmartChan.Lib.Archives.Base;
 
-public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
+public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 {
-	protected BaseFoolFuukaArchiveEngine() : base() { }
+
+	protected BaseFoolFuukaEngine() : base() { }
 
 	public override Url SearchUrl => Url.Combine(BaseUrl, "_", "search");
 
-	protected override async Task<IFlurlResponse> GetInitialSearchResponseAsync(SearchQuery query)
+	protected override async Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query)
 	{
-		var data = new FormUrlEncodedContent(
-			query.KeyValues.Select(kv => new KeyValuePair<string, string>(kv.Key, kv.Value?.ToString())));
+		var tmp1 = query.GetKeyValues()
+			.Select(kv => new KeyValuePair<string, string>(kv.Key, kv.Value?.ToString()));
 
-		var r = await SearchUrl
-			        .WithClient(Client)
+		var data = new FormUrlEncodedContent(tmp1);
+
+		var r = await BuildInitialRequest(query)
 			        .AllowAnyHttpStatus()
-			        .WithAutoRedirect(true)
-			        .WithCookies(Cookies)
 			        .PostAsync(data);
 
 		Logger.LogTrace("{Url} for {Name} #1", SearchUrl, Name);
@@ -36,15 +36,16 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 		return r;
 	}
 
-	public override async Task<ChanPost[]> SearchAsync(SearchQuery q)
+	public override async Task<ChanPost[]> RunSearchAsync(SearchQuery q)
 	{
-		var r = await GetInitialSearchResponseAsync(q);
-		var c = await ParseAsync(r);
+		var r = await GetInitialResponseAsync(q);
+		var c = await ParseResponseAsync(r);
 
 		return c.ToArray();
 	}
 
-	protected override async Task<IEnumerable<ChanPost>> ParseAsync(IFlurlResponse r, CancellationToken ct = default)
+	protected override async Task<IEnumerable<ChanPost>> ParseResponseAsync(
+		IFlurlResponse r, CancellationToken ct = default)
 	{
 		string s = await GetDocumentAsync(ct, r);
 
@@ -69,9 +70,13 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 				return;
 			}
 
-			dp = await parser.ParseDocumentAsync(await link.WithClient(Client).WithCookies(Cookies).GetStringAsync(ct));
-			
-			e  = dp.QuerySelectorAll(Resources.S_Post2);
+			var async = await Client.Request(link)
+				            .WithCookies(Cookies)
+				            .GetStringAsync(cancellationToken: ct);
+
+			dp = await parser.ParseDocumentAsync(async);
+
+			e = dp.QuerySelectorAll(Resources.S_Post2);
 			// e = dp.GetElementsByTagName(Resources.S_Post3);
 			// ent.Add(elem);
 			// NewFunction(l2, e);
@@ -93,7 +98,10 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 		int cn = 0;
 		var cl = new List<ChanPost>();
 
-		await Parallel.ForEachAsync(l2, (element, token) => Body(element, token, cl));
+		await Parallel.ForEachAsync(l2, ct, (element, token) =>
+		{
+			return ParseBodyAsync(element, token, cl);
+		});
 
 		return cl;
 
@@ -105,8 +113,13 @@ public abstract class BaseFoolFuukaArchiveEngine : BaseArchiveEngine
 		uri ??= r.ResponseMessage.RequestMessage.RequestUri;
 
 		Logger.LogTrace("{Url} for {Name} #2", uri, Name);
-		var res2 = await uri.WithClient(Client).WithCookies(Cookies).GetAsync(ct);
-		var s    = await res2.GetStringAsync();
+
+		var res2 = await Client.Request(uri)
+			           .WithCookies(Cookies)
+			           .GetAsync(cancellationToken: ct);
+
+		var s = await res2.GetStringAsync();
 		return s;
 	}
+
 }

@@ -7,25 +7,25 @@ using SmartChan.Lib.Archives.Base;
 
 namespace SmartChan.Lib.Archives;
 
-public sealed class ArchiveOfSinsEngine : BaseFoolFuukaArchiveEngine
+public sealed class ArchiveOfSinsEngine : BaseFoolFuukaEngine
 {
 	public override Url BaseUrl => "https://archiveofsins.com/";
 
 	public override string Name => "Archive of Sins";
 
-	protected override async Task<IFlurlResponse> GetInitialSearchResponseAsync(SearchQuery query)
+	protected override async Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query)
 	{
-		return await base.GetInitialSearchResponseAsync(query);
+		return await base.GetInitialResponseAsync(query);
 	}
 
-	public override async Task<ChanPost[]> SearchAsync(SearchQuery q)
+	public override async Task<ChanPost[]> RunSearchAsync(SearchQuery q)
 	{
-		return await base.SearchAsync(q);
+		return await base.RunSearchAsync(q);
 	}
 
-	protected override async Task<IEnumerable<ChanPost>> ParseAsync(IFlurlResponse r, CancellationToken ct = default)
+	protected override async Task<IEnumerable<ChanPost>> ParseResponseAsync(IFlurlResponse r, CancellationToken ct = default)
 	{
-		return await base.ParseAsync(r, ct);
+		return await base.ParseResponseAsync(r, ct);
 	}
 
 }
