@@ -1,4 +1,8 @@
-﻿using System;
+﻿global using CBN = JetBrains.Annotations.CanBeNullAttribute;
+global using ICBN = JetBrains.Annotations.ItemCanBeNullAttribute;
+global using MN = System.Diagnostics.CodeAnalysis.MaybeNullAttribute;
+global using NN = JetBrains.Annotations.NotNullAttribute;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,19 +25,21 @@ public class SearchClient
 		{
 			var task = e.RunSearchAsync(q).ContinueWith(r =>
 			{
+				var result = r.Result;
+
 				if (r.IsCompletedSuccessfully) {
-					OnEngineResults?.Invoke(r, r.Result);
+					OnEngineResults?.Invoke(r, result);
 				}
 
-				return r.Result;
+				return result;
 			});
 
 			return task;
 		}).ToList();
 
-		var crr = new List<ChanResult>();
-		
-		while (tasks.Any()) {
+		var crr = new List<ChanResult>(eng.Length);
+
+		while (tasks.Count > 0) {
 
 			var r  = await Task.WhenAny(tasks);
 			var rr = await r;

@@ -10,8 +10,11 @@ namespace SmartChan.Lib.Archives;
 
 public sealed class ArchiveOfSinsEngine : BaseFoolFuukaEngine
 {
+
 	public override Url BaseUrl => "https://archiveofsins.com/";
 
 	public override string Name => "Archive of Sins";
+
+	public override BoardIdentifier Boards => BoardIdentifier.cmb_ArchiveOfSins;
 
 }

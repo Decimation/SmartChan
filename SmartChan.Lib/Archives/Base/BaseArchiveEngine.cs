@@ -1,10 +1,10 @@
-﻿using System.Dynamic;
+﻿using System.Diagnostics;
+using System.Dynamic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using AngleSharp.Dom;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
-using Novus.Utilities;
 using SmartChan.Lib.Model;
 using SmartChan.Lib.Utilities;
 using Url = Flurl.Url;
@@ -34,8 +34,9 @@ public abstract class BaseArchiveEngine : IDisposable
 				}
 			}
 		};
-
 	}
+
+	public abstract BoardIdentifier Boards { get; }
 
 	protected internal static readonly ILogger Logger = LogUtil.Factory.CreateLogger(nameof(BaseArchiveEngine));
 
@@ -47,11 +48,44 @@ public abstract class BaseArchiveEngine : IDisposable
 
 	public abstract string Name { get; }
 
+	protected virtual BoardIdentifier Parse(string[] boards)
+	{
+		var b = BoardIdentifier.s_None;
+
+		foreach (string board in boards) {
+
+			var boardLower = board.ToLower();
+
+			if (boardLower == "*") {
+				b = BoardIdentifier.wld_Any;
+				break;
+			}
+
+			var i = Enum.Parse<BoardIdentifier>(boardLower);
+
+			if (!Boards.HasFlag(i)) { }
+			else {
+				b |= i;
+			}
+		}
+
+		return b;
+	}
+
 	protected virtual IFlurlRequest BuildInitialRequest(SearchQuery query)
 	{
-		return Client.Request(SearchUrl)
+
+		var request = Client.Request(SearchUrl)
 			.WithTimeout(Timeout)
-			.WithCookies(Cookies);
+			.WithCookies(Cookies)
+			.OnError(er =>
+			{
+				er.ExceptionHandled = true;
+				Trace.WriteLine($"{Name}: {er.Exception.Message}");
+				Debugger.Break();
+			});
+
+		return request;
 	}
 
 	protected abstract Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query);
@@ -78,16 +112,19 @@ public abstract class BaseArchiveEngine : IDisposable
 
 		// var      header           = post_wrapper.Children[2];
 		var post_data = elem.GetElementsByClassName("post_data");
+
 		// var post_data        = header.Children[0];
 		// var post_poster_data = post_wrapper.Children[3];
 		// var title        = elem.QuerySelector(".post_title");
 		// var post_wrapper = ce2.Children[1];
 		var title = post_data[0].GetElementsByClassName("post_title")[0];
+
 		// var title = post_wrapper.Children[2].Children[0].Children[2];
 		var link = elem.QuerySelector("a")?.GetAttribute("href");
 
 		// var author = post_poster_data.Children[0];
 		var author = elem.QuerySelector(".post_author");
+
 		// var authorTrip = post_wrapper.Children[2].Children[0].Children[3];
 		// var author     = authorTrip.Children[0];
 		// var trip       = post_poster_data.Children[1];
@@ -96,6 +133,7 @@ public abstract class BaseArchiveEngine : IDisposable
 		var fname = post_files?.ChildNodes[1];
 
 		var text = elem.QuerySelector(".text");
+
 		// var text   = post_wrapper.Children[4];
 		var number = elem.QuerySelectorAll("header > div > a");
 		var thread = elem.QuerySelector(".post_controls");
@@ -104,11 +142,12 @@ public abstract class BaseArchiveEngine : IDisposable
 		{
 			Title  = title?.TextContent,
 			Author = author?.TextContent,
+
 			// Tripcode = trip?.TextContent,
 			Text  = text?.TextContent,
 			Url   = [link, fl],
 			Other = new ExpandoObject(),
-			Time = DateTime.Parse(time.GetAttribute("datetime"))
+			Time  = DateTime.Parse(time.GetAttribute("datetime"))
 		};
 		post.Other.number = number;
 		post.Other.thread = thread;
@@ -116,7 +155,7 @@ public abstract class BaseArchiveEngine : IDisposable
 		return post;
 	}
 
-	public void Dispose() { }
+	public virtual void Dispose() { }
 
 	protected BaseArchiveEngine()
 	{
@@ -132,8 +171,7 @@ public abstract class BaseArchiveEngine : IDisposable
 
 	#endregion
 
-	public static readonly BaseArchiveEngine[] All =
-		ReflectionHelper.CreateAllInAssembly<BaseArchiveEngine>(InheritanceProperties.Subclass).ToArray();
+	public static readonly BaseArchiveEngine[] All = [new ArchiveOfSinsEngine(), new ArchivedMoeEngine()];
 
 	public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds(20);
 

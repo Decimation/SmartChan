@@ -1,18 +1,20 @@
 ﻿// Read S SmartChan.Lib SearchQuery.cs
 // 2023-06-04 @ 5:28 PM
 
-global using IKeyValue = Kantan.Model.IKeyValue<string, object>;
-global using KeyValueList = System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string, object>>;
+// global using IKeyValue = Kantan.Model.IKeyValue<string, object>;
+// global using KeyValueList = System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string, object>>;
 using System;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Kantan.Model;
+using SmartChan.Lib.Model;
 
 namespace SmartChan.Lib;
 
-public class SearchQuery : IKeyValue
+public class SearchQuery:IIdValMapDecomposable
 {
 
 	#region
@@ -66,36 +68,36 @@ public class SearchQuery : IKeyValue
 		Boards = null;
 	}
 
-	public KeyValueList GetKeyValues()
+	public IdValMap ToIdValMap()
 	{
-		var kv = new List<KeyValuePair<string, object>>()
+		var kv = new IdValMap()
 		{
-			new("text", Text),
-			new("submit_search", SubmitSearch),
-			new("tnum", Thread),
-			new("subject", Subject),
-			new("username", Username),
-			new("tripcode", Tripcode),
-			new("email", Email),
-			new("uid", Uid),
-			new("country", Country),
-			new("filename", Filename),
-			new("image", Image),
-			new("start", Start),
-			new("end", End),
-			//boards[]
-			new("capcode", Capcode),
-			new("filter", Filter),
-			new("deleted", Deleted),
-			new("ghost", Ghost),
-			new("type", Type),
-			new("results", Results),
-			new("order", Order),
-			
+			["text"]          = Text,
+			["submit_search"] = SubmitSearch,
+			["tnum"]          = Thread,
+			["subject"]       = Subject,
+			["username"]      = Username,
+			["tripcode"]      = Tripcode,
+			["email"]         = Email,
+			["uid"]           = Uid,
+			["country"]       = Country,
+			["filename"]      = Filename,
+			["image"]         = Image,
+			["start"]         = Start,
+			["end"]           = End,
+			["boards[]"]        = Array.Empty<string>(),
+			["capcode"]       = Capcode,
+			["filter"]        = Filter,
+			["deleted"]       = Deleted,
+			["ghost"]         = Ghost,
+			["type"]          = Type,
+			["results"]       = Results,
+			["order"]         = Order,
+
 		};
 
-		var b  = Boards.Select(k => new KeyValuePair<string, object>("boards[]", k));
-		kv.AddRange(b);
+		/*var b  = Boards.Select(k => new KeyValuePair<string, object>("boards[]", k));
+		kv.AddRange(b);*/
 
 		return kv;
 

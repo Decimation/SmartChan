@@ -8,10 +8,12 @@ using Kantan.Text;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using JetBrains.Annotations;
 using Url = Flurl.Url;
 using System.Runtime.ConstrainedExecution;
 using SmartChan.Lib.Model;
+using SmartChan.Lib.Utilities;
 
 namespace SmartChan.Lib.Archives.Base;
 
@@ -24,7 +26,12 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 
 	protected override async Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query)
 	{
-		var tmp1 = query.GetKeyValues()
+		var objects     = query.ToIdValMap();
+		var bi          = Parse(query.Boards);
+		var boardString = ChanHelper.GetBoardString(bi);
+		objects["boards[]"] = boardString;
+
+		var tmp1 = objects
 			.Select(kv => new KeyValuePair<string, string>(kv.Key, kv.Value?.ToString()));
 
 		var data = new FormUrlEncodedContent(tmp1);
@@ -48,7 +55,7 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 
 	protected override async Task<ChanResult> ParseResponseAsync(IFlurlResponse r, CancellationToken ct = default)
 	{
-		string s = await GetDocumentAsync(ct, r);
+		string s = await GetDocumentAsync(r, ct);
 
 		var parser = new HtmlParser();
 
@@ -57,6 +64,7 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 		// var s  = await r.ResponseMessage.Content.ReadAsStringAsync();
 		var dp = await parser.ParseDocumentAsync(s);
 		var e  = dp.QuerySelectorAll(Resources.S_Post2);
+
 		// var e = dp.GetElementsByTagName(Resources.S_Post3);
 
 		// NewFunction(l2, e);
@@ -78,6 +86,7 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 			dp = await parser.ParseDocumentAsync(async);
 
 			e = dp.QuerySelectorAll(Resources.S_Post2);
+
 			// e = dp.GetElementsByTagName(Resources.S_Post3);
 			// ent.Add(elem);
 			// NewFunction(l2, e);
@@ -104,7 +113,7 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 		{
 			var pb = await ParseBodyAsync(element, token);
 
-			if (pb is {}) {
+			if (pb is { }) {
 				cb.Add(pb);
 			}
 
@@ -120,7 +129,8 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 
 	}
 
-	protected async Task<string> GetDocumentAsync(CancellationToken ct, IFlurlResponse r)
+	[ICBN]
+	protected async Task<string> GetDocumentAsync(IFlurlResponse r, CancellationToken ct)
 	{
 		var uri = r.ResponseMessage.Headers.Location;
 		uri ??= r.ResponseMessage.RequestMessage.RequestUri;
@@ -129,6 +139,11 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 
 		var res2 = await Client.Request(uri)
 			           .WithCookies(Cookies)
+			           .OnError(er =>
+			           {
+				           er.ExceptionHandled = true;
+				           Trace.WriteLine($"{Name}: {er.Exception.Message} when {nameof(GetDocumentAsync)}");
+			           })
 			           .GetAsync(cancellationToken: ct);
 
 		var s = await res2.GetStringAsync();

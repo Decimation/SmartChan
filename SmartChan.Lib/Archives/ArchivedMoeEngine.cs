@@ -8,7 +8,11 @@ namespace SmartChan.Lib.Archives;
 
 public sealed class ArchivedMoeEngine : BaseFoolFuukaEngine
 {
+
 	public override Url BaseUrl => "https://archived.moe/";
 
 	public override string Name => "Archived.Moe";
+
+	public override BoardIdentifier Boards => BoardIdentifier.cmb_ArchivedMoe;
+
 }
