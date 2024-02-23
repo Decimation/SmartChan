@@ -89,9 +89,14 @@ internal sealed class SearchCommand : AsyncCommand<SearchCommandSettings>
 
 				foreach (ChanPost postResult in post.Results) {
 					OutputWriter.WriteLine($"{postResult.Title} | {postResult.Author} @ {postResult.Time}:");
-					OutputWriter.WriteLine($"{postResult.Filename}");
+					OutputWriter.WriteLine($"{postResult.Url} {postResult.Filename}");
 					OutputWriter.WriteLine($"{postResult.Text}");
-					OutputWriter.WriteLine($"{postResult.Url?.QuickJoin()}");
+
+					foreach (string postResultUrl in postResult.Urls) {
+						OutputWriter.WriteLine($"{postResultUrl}");
+
+					}
+
 					OutputWriter.WriteLine();
 				}
 

@@ -1,6 +1,7 @@
 ﻿// Read S SmartChan.Lib ChanPost.cs
 // 2023-06-04 @ 6:14 PM
 
+using Flurl;
 using Kantan.Model;
 using SmartChan.Lib.Utilities;
 
@@ -19,11 +20,13 @@ public record ChanPost : IIdValMapDecomposable
 
 	public string Text { get; init; }
 
-	public string[] Url { get; init; }
+	public string[] Urls { get; init; }
 
 	public DateTime Time { get; init; }
 
 	public dynamic Other { get; init; }
+
+	public Url Url { get; init; }
 
 	public IdValMap ToIdValMap()
 	{
@@ -34,8 +37,9 @@ public record ChanPost : IIdValMapDecomposable
 			["Tripcode"] = Tripcode,
 			["Filename"] = Filename,
 			["Text"]     = Text,
-			["URL"]      = Url,
+			["Urls"]      = Urls,
 			["Time"]     = Time,
+			["Url"]     = Url,
 		};
 
 	}

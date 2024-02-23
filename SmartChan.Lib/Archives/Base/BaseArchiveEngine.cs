@@ -144,7 +144,27 @@ public abstract class BaseArchiveEngine : IDisposable
 		var title = post_data[0].GetElementsByClassName("post_title")[0];
 
 		// var title = post_wrapper.Children[2].Children[0].Children[2];
-		var link = elem.QuerySelector("a")?.GetAttribute("href");
+		var pd    = elem.QuerySelector(".post_data");
+		var allA  = pd.GetElementsByTagName("a");
+		var links = new List<string>();
+		Url ml    = null;
+
+		foreach (IElement element in allA) {
+			var o = element.GetAttribute("href");
+
+			var dp = element.GetAttribute("data-post");
+			var df = element.GetAttribute("data-function");
+
+			if (ml == null && dp != null && df == "quote") {
+				ml = o;
+			}
+
+			if (o != null) {
+				links.Add(o);
+			}
+		}
+
+		// var link = elem.QuerySelector("a")?.GetAttribute("href");
 
 		// var author = post_poster_data.Children[0];
 		var author = elem.QuerySelector(".post_author");
@@ -170,12 +190,14 @@ public abstract class BaseArchiveEngine : IDisposable
 
 		var post = new ChanPost()
 		{
-			Title  = title?.TextContent,
-			Author = author?.TextContent,
+			Title    = title?.TextContent,
+			Author   = author?.TextContent,
 			Filename = fname?.TextContent,
+			Url     = ml,
+
 			// Tripcode = trip?.TextContent,
 			Text  = text?.TextContent,
-			Url   = [link, fl],
+			Urls  = [..links, fl],
 			Other = new ExpandoObject(),
 			Time  = DateTime.Parse(time.GetAttribute("datetime"))
 		};
