@@ -3,11 +3,11 @@
 
 global using IdValMap = System.Collections.Generic.Dictionary<string, object>;
 
-namespace SmartChan.Lib.Model;
+namespace SmartChan.Lib.Utilities;
 
 public interface IIdValMapDecomposable
 {
 
-	public IdValMap ToIdValMap();
+    public IdValMap ToIdValMap();
 
 }

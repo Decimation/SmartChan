@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Kantan.Model;
-using SmartChan.Lib.Model;
+using SmartChan.Lib.Utilities;
 
 namespace SmartChan.Lib;
 
@@ -85,7 +85,6 @@ public class SearchQuery:IIdValMapDecomposable
 			["image"]         = Image,
 			["start"]         = Start,
 			["end"]           = End,
-			["boards[]"]        = Array.Empty<string>(),
 			["capcode"]       = Capcode,
 			["filter"]        = Filter,
 			["deleted"]       = Deleted,

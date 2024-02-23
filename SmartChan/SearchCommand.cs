@@ -1,8 +1,9 @@
 ﻿// Deci SmartChan SearchCommand.cs
 // $File.CreatedYear-$File.CreatedMonth-22 @ 16:27
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using JetBrains.Annotations;
+using Kantan.Text;
 using SmartChan.Lib;
 using SmartChan.Lib.Archives.Base;
 using SmartChan.Lib.Model;
@@ -12,31 +13,15 @@ using static SmartChan.SearchCommand;
 
 namespace SmartChan;
 
-internal sealed class SearchCommand : AsyncCommand<SearchCommand.Settings>
+internal sealed class SearchCommand : AsyncCommand<SearchCommandSettings>
 {
 
-	public sealed class Settings : CommandSettings
-	{
-
-		[CanBeNull]
-		[CommandArgument(0, "[searchPath]")]
-		public string Subject { get; init; }
-
-		[CanBeNull]
-		[CommandOption("-b|--boards")]
-		public string Boards { get; init; }
-
-		[CommandOption("--output")]
-		public string Output { get; init; }
-
-	}
-
-	public override ValidationResult Validate(CommandContext context, Settings settings)
+	public override ValidationResult Validate(CommandContext context, SearchCommandSettings settings)
 	{
 		return base.Validate(context, settings);
 	}
 
-	public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
+	public override async Task<int> ExecuteAsync(CommandContext context, SearchCommandSettings settings)
 	{
 
 		AnsiConsole.WriteLine($"Boards: {string.Join(',', settings.Boards)} | Subject: {settings.Subject}");
@@ -71,27 +56,52 @@ internal sealed class SearchCommand : AsyncCommand<SearchCommand.Settings>
 			OutputWriter.Flush();
 		};*/
 
-		var all   = BaseArchiveEngine.All;
-		var posts = await sc.RunSearchAsync(query, all);
+		var all = BaseArchiveEngine.All;
 
-		sw.Stop();
+		await AnsiConsole.Progress().StartAsync(async x =>
+		{
+			var dict = new ConcurrentDictionary<BaseArchiveEngine, ProgressTask>();
 
-		Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
-
-		foreach (ChanResult post in posts) {
-			OutputWriter.WriteLine($"{post.Engine.Name} - {post.Results.Count}:");
-			OutputWriter.WriteLine();
-
-			foreach (ChanPost postResult in post.Results) {
-				OutputWriter.WriteLine($"{postResult.Author} @ {postResult.Time}:");
-				OutputWriter.WriteLine($"{postResult.Text}");
-				OutputWriter.WriteLine();
+			foreach (var archive in all) {
+				dict.TryAdd(archive, x.AddTask($"{archive.Name}"));
 			}
 
-			OutputWriter.Flush();
-		}
+			foreach (BaseArchiveEngine engine in all) {
+				Action<ParseProgress> action = tuple =>
+				{
+					var task = dict[engine];
+					task.Increment((double) tuple.Parsed / tuple.Pages);
+					task.Description = $"{engine.Name} : {tuple}";
+				};
 
-		CloseOutput();
+				engine.Progress = new Progress<ParseProgress>(action);
+			}
+
+			var posts = await sc.RunSearchAsync(query, all);
+
+			sw.Stop();
+
+			Console.WriteLine($"{sw.Elapsed.TotalSeconds:F3}");
+
+			foreach (ChanResult post in posts) {
+				OutputWriter.WriteLine($"{post.Engine.Name} - {post.Results.Count}:");
+				OutputWriter.WriteLine();
+
+				foreach (ChanPost postResult in post.Results) {
+					OutputWriter.WriteLine($"{postResult.Title} | {postResult.Author} @ {postResult.Time}:");
+					OutputWriter.WriteLine($"{postResult.Filename}");
+					OutputWriter.WriteLine($"{postResult.Text}");
+					OutputWriter.WriteLine($"{postResult.Url?.QuickJoin()}");
+					OutputWriter.WriteLine();
+				}
+
+				OutputWriter.Flush();
+			}
+
+			CloseOutput();
+
+			return;
+		});
 
 		return 0;
 	}

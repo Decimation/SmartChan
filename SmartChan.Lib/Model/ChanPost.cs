@@ -2,6 +2,7 @@
 // 2023-06-04 @ 6:14 PM
 
 using Kantan.Model;
+using SmartChan.Lib.Utilities;
 
 namespace SmartChan.Lib.Model;
 

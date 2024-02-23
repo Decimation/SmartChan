@@ -3,6 +3,7 @@
 
 using Flurl;
 using SmartChan.Lib.Archives.Base;
+using SmartChan.Lib.Model;
 
 namespace SmartChan.Lib.Archives;
 
@@ -13,6 +14,6 @@ public sealed class ArchivedMoeEngine : BaseFoolFuukaEngine
 
 	public override string Name => "Archived.Moe";
 
-	public override BoardIdentifier Boards => BoardIdentifier.cmb_ArchivedMoe;
+	public override ChanBoardId Boards => ChanBoardId.cmb_ArchivedMoe;
 
 }

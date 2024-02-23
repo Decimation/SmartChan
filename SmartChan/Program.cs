@@ -8,6 +8,7 @@ using Kantan.Text;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SmartChan.Lib.Archives;
+using SmartChan.Lib.Archives.Base;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Url = Flurl.Url;
@@ -26,7 +27,14 @@ public static class Program
 		};
 	}
 
-	public static async Task Main(string[] args)
+	[ModuleInitializer]
+	public static void Init()
+	{
+		// Global.Setup();
+		RuntimeHelpers.RunClassConstructor(typeof(BaseArchiveEngine).TypeHandle);
+	}
+
+	public static async Task<int> Main(string[] args)
 	{
 #if DEBUG
 		if (args is not { Length: >= 1 }) {
@@ -38,6 +46,7 @@ public static class Program
 		var app = new CommandApp<SearchCommand>();
 		var res = await app.RunAsync(args);
 
+		return res;
 	}
 
 }

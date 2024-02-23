@@ -15,6 +15,6 @@ public sealed class ArchiveOfSinsEngine : BaseFoolFuukaEngine
 
 	public override string Name => "Archive of Sins";
 
-	public override BoardIdentifier Boards => BoardIdentifier.cmb_ArchiveOfSins;
+	public override ChanBoardId Boards => ChanBoardId.cmb_ArchiveOfSins;
 
 }

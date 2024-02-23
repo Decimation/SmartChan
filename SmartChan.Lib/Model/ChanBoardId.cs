@@ -5,11 +5,11 @@
 
 using SmartChan.Lib.Utilities;
 
-namespace SmartChan.Lib.Archives;
+namespace SmartChan.Lib.Model;
 
 /// <summary>
 /// Where
-/// <i><c>bi</c></i> is a <see cref="BoardIdentifier"/>
+/// <i><c>bi</c></i> is a <see cref="ChanBoardId"/>
 /// <para />
 /// <see cref="ChanHelper.BI_R">Removal</see>
 /// <br />
@@ -20,10 +20,14 @@ namespace SmartChan.Lib.Archives;
 /// <see cref="ChanHelper.BI_S">Special</see>
 /// </summary>
 [Flags]
-public enum BoardIdentifier : ulong
+public enum ChanBoardId : ulong
 {
 
+	#region Special
+
 	s_None = 1UL << 0,
+
+	#endregion
 
 	aco    = 1UL << 1,
 	adv    = 1UL << 2,
@@ -87,16 +91,24 @@ public enum BoardIdentifier : ulong
 	fap    = 1UL << 60,
 	t      = 1UL << 61,
 
+	#region Combinations
+
 	cmb_ArchiveOfSins = h | hc | hm | i | lgbt | r | s | soc | t | u,
 
-	cmb_ArchivedMoe = aco | adv | an | asp | b | bant | biz | c | can | cgl | ck | cm | cock | d | diy | e | f | fitlit
-	                  | gd
-	                  | gif | h | hc | his | hm | hr | i | ic | lgbt | lit | mlpol | mo | mtv | n | news | o | r_out
-	                  | outsoc
-	                  | p | po | pw | q | qa | qst | r | s | soc | spa | trv | u | vint | vip | vrpg | w | wg | wsg
-	                  | wsr
-	                  | x | y | con | fap,
+	cmb_ArchivedMoe = aco      | adv  | an   | asp   | b | bant | biz | c | can | cgl | ck | cm | cock | d | diy | e | f
+	                  | fitlit | gd   | gif  | h     | hc | his | hm | hr | i | ic | lgbt | lit | mlpol | mo | mtv
+	                  | n      | news | o    | r_out | outsoc | p | po | pw | q | qa | qst | r | s | soc | spa | trv | u
+	                  | vint   | vip  | vrpg | w     | wg | wsg | wsr | x | y | con | fap,
 
+	#endregion
+
+	#region Wildcard
+
+	/// <summary>
+	/// <see cref="ChanHelper.BI_WLD"/> → <see cref="ChanHelper.BI_WLD_PARAM"/>
+	/// </summary>
 	wld_Any = 1UL << -1,
+
+	#endregion
 
 }

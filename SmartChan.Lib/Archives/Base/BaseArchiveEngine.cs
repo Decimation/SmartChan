@@ -13,6 +13,26 @@ using Url = Flurl.Url;
 
 namespace SmartChan.Lib.Archives.Base;
 
+public readonly struct ParseProgress
+{
+
+	public long Parsed { get; init; }
+
+	public long Pages { get; init; }
+
+	public ParseProgress(long parsed, long pages)
+	{
+		Parsed = parsed;
+		Pages  = pages;
+	}
+
+	public override string ToString()
+	{
+		return $"{Parsed}/{Pages}";
+	}
+
+}
+
 public abstract class BaseArchiveEngine : IDisposable
 {
 
@@ -36,7 +56,7 @@ public abstract class BaseArchiveEngine : IDisposable
 		};
 	}
 
-	public abstract BoardIdentifier Boards { get; }
+	public abstract ChanBoardId Boards { get; }
 
 	protected internal static readonly ILogger Logger = LogUtil.Factory.CreateLogger(nameof(BaseArchiveEngine));
 
@@ -46,22 +66,26 @@ public abstract class BaseArchiveEngine : IDisposable
 
 	protected CookieJar Cookies { get; }
 
+	public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds(20);
+
 	public abstract string Name { get; }
 
-	protected virtual BoardIdentifier Parse(string[] boards)
+	public IProgress<ParseProgress> Progress { get; set; }
+
+	protected virtual ChanBoardId ParseBoards(string[] boards)
 	{
-		var b = BoardIdentifier.s_None;
+		var b = ChanBoardId.s_None;
 
 		foreach (string board in boards) {
 
 			var boardLower = board.ToLower();
 
-			if (boardLower == "*") {
-				b = BoardIdentifier.wld_Any;
+			if (boardLower == ChanHelper.BI_WLD_PARAM) {
+				b = ChanBoardId.wld_Any;
 				break;
 			}
 
-			var i = Enum.Parse<BoardIdentifier>(boardLower);
+			var i = Enum.Parse<ChanBoardId>(boardLower);
 
 			if (!Boards.HasFlag(i)) { }
 			else {
@@ -128,9 +152,15 @@ public abstract class BaseArchiveEngine : IDisposable
 		// var authorTrip = post_wrapper.Children[2].Children[0].Children[3];
 		// var author     = authorTrip.Children[0];
 		// var trip       = post_poster_data.Children[1];
-		var time  = elem.QuerySelector(".time_wrap")?.Children[0];
-		var fl    = post_files?.QuerySelector("a")?.GetAttribute("href");
-		var fname = post_files?.ChildNodes[1];
+		var time = elem.QuerySelector(".time_wrap")?.Children[0];
+		var fl   = post_files?.QuerySelector("a")?.GetAttribute("href");
+
+		INode fname = default;
+
+		if (post_files is { ChildNodes: { Length: >= 1 } cn }) {
+			fname = cn[^1];
+
+		}
 
 		var text = elem.QuerySelector(".text");
 
@@ -142,7 +172,7 @@ public abstract class BaseArchiveEngine : IDisposable
 		{
 			Title  = title?.TextContent,
 			Author = author?.TextContent,
-
+			Filename = fname?.TextContent,
 			// Tripcode = trip?.TextContent,
 			Text  = text?.TextContent,
 			Url   = [link, fl],
@@ -172,7 +202,5 @@ public abstract class BaseArchiveEngine : IDisposable
 	#endregion
 
 	public static readonly BaseArchiveEngine[] All = [new ArchiveOfSinsEngine(), new ArchivedMoeEngine()];
-
-	public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds(20);
 
 }

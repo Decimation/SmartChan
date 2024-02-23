@@ -22,14 +22,21 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 
 	protected BaseFoolFuukaEngine() : base() { }
 
-	public override Url SearchUrl => Url.Combine(BaseUrl, "_", "search");
+	public override Url SearchUrl => Url.Combine(BaseUrl, ChanHelper.BI_WLD_QUERY, "search");
 
 	protected override async Task<IFlurlResponse> GetInitialResponseAsync(SearchQuery query)
 	{
-		var objects     = query.ToIdValMap();
-		var bi          = Parse(query.Boards);
-		var boardString = ChanHelper.GetBoardString(bi);
-		objects["boards[]"] = boardString;
+		var objects = query.ToIdValMap().ToList();
+		var bi      = ParseBoards(query.Boards);
+
+		var queryString = ChanHelper.GetBoardQueryString(bi);
+
+		var boardsPost = queryString
+			.Split(",", StringSplitOptions.TrimEntries)
+			.Select(x => new KeyValuePair<string, object>("boards[]", x));
+
+		// objects["boards[]"] = boardString;
+		objects.AddRange(boardsPost);
 
 		var tmp1 = objects
 			.Select(kv => new KeyValuePair<string, string>(kv.Key, kv.Value?.ToString()));
@@ -59,8 +66,6 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 
 		var parser = new HtmlParser();
 
-		var l2 = new List<IElement>();
-
 		// var s  = await r.ResponseMessage.Content.ReadAsStringAsync();
 		var dp = await parser.ParseDocumentAsync(s);
 		var e  = dp.QuerySelectorAll(Resources.S_Post2);
@@ -70,6 +75,9 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 		// NewFunction(l2, e);
 		// l2.AddRange(e);
 		var pages = dp.QuerySelectorAll(Resources.S_Paginate);
+		var l2    = new List<IElement>(pages.Length);
+
+		Progress?.Report(new(0, pages.Length));
 
 		await Parallel.ForEachAsync(pages, ct, async (vElement, x) =>
 		{
@@ -91,6 +99,7 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 			// ent.Add(elem);
 			// NewFunction(l2, e);
 			l2.AddRange(e);
+
 		});
 
 		/*foreach (IElement vElement in pages) {
@@ -116,6 +125,8 @@ public abstract class BaseFoolFuukaEngine : BaseArchiveEngine
 			if (pb is { }) {
 				cb.Add(pb);
 			}
+
+			Progress?.Report(new(cb.Count, pages.Length));
 
 		});
 
